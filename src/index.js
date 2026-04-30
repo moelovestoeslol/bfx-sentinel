@@ -27,23 +27,15 @@ for (const folder of commandFolders) {
   for (const file of commandFiles) {
     const command = require(path.join(folderPath, file));
     client.commands.set(command.name, command);
-    
-    if (command.data) {
-        slashCommandsJSON.push(command.data.toJSON());
-    }
+    if (command.data) slashCommandsJSON.push(command.data.toJSON());
   }
 }
 
 // --- 2. Register Slash Commands ---
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-
 (async () => {
   try {
-    console.log('Started refreshing application (/) commands.');
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: slashCommandsJSON },
-    );
+    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: slashCommandsJSON });
     console.log('Successfully reloaded application (/) commands.');
   } catch (error) {
     console.error(error);
@@ -52,42 +44,55 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
 // --- 3. Interaction Handler (Slash & Menus) ---
 client.on('interactionCreate', async interaction => {
-  // Handle Slash Commands
   if (interaction.isChatInputCommand()) {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
-    try {
-      await command.execute(interaction, client);
-    } catch (error) {
-      console.error(error);
-      await interaction.reply({ content: 'There was an error executing this command!', ephemeral: true });
-    }
+    try { await command.execute(interaction, client); } catch (error) { console.error(error); }
   }
 
-  // Handle Help Select Menu
   if (interaction.isStringSelectMenu()) {
-    if (interaction.customId === 'help_menu' && interaction.values[0] === 'show_help') {
-      const helpCommand = client.commands.get('help');
-      if (helpCommand) {
-        await helpCommand.execute(interaction, [], client);
-      } else {
-        await interaction.reply({ content: "Help command not found!", ephemeral: true });
+    if (interaction.customId === 'help_menu') {
+      const selection = interaction.values[0];
+
+      if (selection === 'show_help') {
+        const helpCommand = client.commands.get('help');
+        // We pass an empty array [] to simulate the "args" for prefix commands
+        if (helpCommand) await helpCommand.execute(interaction, [], client);
+      }
+
+      if (selection === 'show_dev') {
+        const devEmbed = new EmbedBuilder()
+          .setColor(0x010101)
+          .setTitle('🛡️ Developer Information')
+          .setThumbnail(client.user.displayAvatarURL())
+          .setDescription('**The Sentinel** — MADE BY NUH FOR SUREEEE! 🔥')
+          .addFields(
+            { name: '👑 Owners', value: [
+                `**[01].** <@1424300320967884811> (Nuh)`,
+                `**[02].** <@1014550997072347137> (wtreboi)`,
+                `**[03].** <@1479660280555376853> (Karan)`
+              ].join('\n') }
+          )
+          .setFooter({ text: 'Powered by The Sentinel™', iconURL: client.user.displayAvatarURL() });
+
+        await interaction.reply({ embeds: [devEmbed], ephemeral: true });
       }
     }
   }
 });
 
-// --- 4. Reply Detection (The "Nexus Hitler" Replacement) ---
+// --- 4. Reply Detection & Custom Help Menu ---
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
-    // Check if the message is a reply to the bot
+    // Trigger on bot mention OR reply to bot
+    const isMentioned = message.content.includes(`<@${client.user.id}>`);
     const isReplyToBot = message.reference && 
                          (await message.channel.messages.fetch(message.reference.messageId)).author.id === client.user.id;
 
-    if (isReplyToBot) {
+    if (isReplyToBot || isMentioned) {
         const replyEmbed = new EmbedBuilder()
-            .setColor(0x010101) 
+            .setColor(0x010101)
             .setTitle(`[ BFX STOCKS Services ]`)
             .setThumbnail(client.user.displayAvatarURL())
             .setDescription(
@@ -95,10 +100,7 @@ client.on('messageCreate', async (message) => {
                 `➡️ **Prefix For This Server:** \`${client.prefix}\`\n\n` +
                 `*Type \`${client.prefix}help\` for more information.*`
             )
-            .setFooter({ 
-                text: 'Powered by The Sentinel™', 
-                iconURL: client.user.displayAvatarURL() 
-            });
+            .setFooter({ text: 'Powered by The Sentinel™', iconURL: client.user.displayAvatarURL() });
 
         const menu = new ActionRowBuilder()
             .addComponents(
@@ -112,6 +114,12 @@ client.on('messageCreate', async (message) => {
                             value: 'show_help',
                             emoji: '📋',
                         },
+                        {
+                          label: 'Developer',
+                          description: 'View the elite team behind the bot',
+                          value: 'show_dev',
+                          emoji: '🛡️',
+                        }
                     ]),
             );
 
@@ -122,14 +130,10 @@ client.on('messageCreate', async (message) => {
 // --- 5. Load Events ---
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'));
-
 for (const file of eventFiles) {
   const event = require(path.join(eventsPath, file));
-  if (event.once) {
-    client.once(event.name, (...args) => event.execute(...args, client));
-  } else {
-    client.on(event.name, (...args) => event.execute(...args, client));
-  }
+  if (event.once) client.once(event.name, (...args) => event.execute(...args, client));
+  else client.on(event.name, (...args) => event.execute(...args, client));
 }
 
 client.login(process.env.TOKEN);
