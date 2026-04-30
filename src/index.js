@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Collection, REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, REST, Routes, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
@@ -28,14 +28,13 @@ for (const folder of commandFolders) {
     const command = require(path.join(folderPath, file));
     client.commands.set(command.name, command);
     
-    // Check if the command has a data property for Slash Commands
     if (command.data) {
         slashCommandsJSON.push(command.data.toJSON());
     }
   }
 }
 
-// --- 2. Register Slash Commands with Discord ---
+// --- 2. Register Slash Commands ---
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
 (async () => {
@@ -51,22 +50,76 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
   }
 })();
 
-// --- 3. Handle Interactions (/) ---
+// --- 3. Interaction Handler (Slash & Menus) ---
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
+  // Handle Slash Commands
+  if (interaction.isChatInputCommand()) {
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+    try {
+      await command.execute(interaction, client);
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({ content: 'There was an error executing this command!', ephemeral: true });
+    }
+  }
 
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
-
-  try {
-    await command.execute(interaction, client);
-  } catch (error) {
-    console.error(error);
-    await interaction.reply({ content: 'There was an error executing this command!', ephemeral: true });
+  // Handle Help Select Menu
+  if (interaction.isStringSelectMenu()) {
+    if (interaction.customId === 'help_menu' && interaction.values[0] === 'show_help') {
+      const helpCommand = client.commands.get('help');
+      if (helpCommand) {
+        await helpCommand.execute(interaction, [], client);
+      } else {
+        await interaction.reply({ content: "Help command not found!", ephemeral: true });
+      }
+    }
   }
 });
 
-// --- 4. Load Events ---
+// --- 4. Reply Detection (The "Nexus Hitler" Replacement) ---
+client.on('messageCreate', async (message) => {
+    if (message.author.bot) return;
+
+    // Check if the message is a reply to the bot
+    const isReplyToBot = message.reference && 
+                         (await message.channel.messages.fetch(message.reference.messageId)).author.id === client.user.id;
+
+    if (isReplyToBot) {
+        const replyEmbed = new EmbedBuilder()
+            .setColor(0x010101) 
+            .setTitle(`[ BFX STOCKS Services ]`)
+            .setThumbnail(client.user.displayAvatarURL())
+            .setDescription(
+                `🌟 **Hey** ${message.author}\n` +
+                `➡️ **Prefix For This Server:** \`${client.prefix}\`\n\n` +
+                `*Type \`${client.prefix}help\` for more information.*`
+            )
+            .setFooter({ 
+                text: 'Powered by The Sentinel™', 
+                iconURL: client.user.displayAvatarURL() 
+            });
+
+        const menu = new ActionRowBuilder()
+            .addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId('help_menu')
+                    .setPlaceholder('Start With The Sentinel')
+                    .addOptions([
+                        {
+                            label: 'Help',
+                            description: 'Show every command available',
+                            value: 'show_help',
+                            emoji: '📋',
+                        },
+                    ]),
+            );
+
+        await message.reply({ embeds: [replyEmbed], components: [menu] });
+    }
+});
+
+// --- 5. Load Events ---
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'));
 
