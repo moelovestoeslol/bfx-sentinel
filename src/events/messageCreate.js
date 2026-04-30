@@ -37,14 +37,16 @@ module.exports = {
                          (await message.channel.messages.fetch(message.reference.messageId).catch(() => null))?.author.id === client.user.id;
 
     if (isReplyToBot || isMentioned) {
+      // THE NEW TUFF REDESIGN
       const replyEmbed = new EmbedBuilder()
         .setColor(0x010101)
-        .setTitle(`[ BFX STOCKS Services ]`)
+        .setTitle(`[ BFX STOCKS SERVICES ]`)
         .setThumbnail(client.user.displayAvatarURL())
         .setDescription(
-          `🌟 **Hey** ${message.author}\n` +
-          `➡️ **Prefix For This Server:** \`${client.prefix}\`\n\n` +
-          `*Type \`${client.prefix}help\` for more information.*`
+          `🌟 **Welcome back,** ${message.author}\n\n` +
+          `> **System Prefix:** \`${client.prefix}\`\n` +
+          `> **Guard Status:** \`${client.autoModEnabled ? '🟢 ONLINE' : '🔴 OFFLINE'}\`\n\n` +
+          `*Select an option below to explore the **Sentinel** architecture.*`
         )
         .setFooter({ text: 'Powered by The Sentinel™', iconURL: client.user.displayAvatarURL() });
 
