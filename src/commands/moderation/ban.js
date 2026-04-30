@@ -20,6 +20,7 @@ module.exports = {
     const target = isSlash ? context.options.getMember('target') : context.mentions.members.first();
     const reason = (isSlash ? context.options.getString('reason') : args.slice(1).join(' ')) || 'No reason provided';
 
+    // STOP LOGIC: Using return so it doesn't double-send
     if (!target) return context.reply('❌ Provide a user.');
     if (target.id === moderator.id) return context.reply('❌ You cannot ban yourself.');
     if (eliteTrio.includes(target.id)) return context.reply('❌ **FATAL ERROR** | Termination of an Owner is strictly prohibited.');
