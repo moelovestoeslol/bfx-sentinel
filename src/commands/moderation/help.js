@@ -2,7 +2,7 @@ const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
   name: 'help',
-  description: 'Displays the Sentinel Command Codex',
+  description: 'Displays the Sentinel Commands',
   async execute(message, args, client) {
     const helpEmbed = new EmbedBuilder()
       .setColor(0x010101)
@@ -11,7 +11,7 @@ module.exports = {
       .setDescription('*Advanced protection architecture for BFX STOCKS Services.*')
       .addFields(
         { 
-          name: '🛡️ OWNER ONLY (Sentinel Guard)', 
+          name: '🛡️ OWNER ONLY', 
           value: 
             `\`?automod on\` / \`/automod on\`\n` +
             `\`?automod off\` / \`/automod off\`\n` +
@@ -22,18 +22,17 @@ module.exports = {
         { 
           name: '⚔️ MODERATION', 
           value: 
-            `\`?ban\` / \`/ban\` — Terminate access\n` +
-            `\`?timeout\` / \`/timeout\` — Temporary silence\n` +
-            `\`?warn\` / \`/warn\` — Log violation\n` +
-            `\`?warnings\` / \`/warnings\` — View history\n` +
-            `\`?clearwarnings\` / \`/clearwarnings\` — Wipe history`, 
+            `\`?ban\` / \`/ban\`\n` +
+            `\`?timeout\` / \`/timeout\`\n` +
+            `\`?warn\` / \`/warn\`\n` +
+            `\`?warnings\` / \`/warnings\`\n` +
+            `\`?clearwarnings\` / \`/clearwarnings\``, 
           inline: false 
         },
         { 
           name: '⚙️ SYSTEM', 
           value: 
-            `\`?prefix [symbol]\` — Change system prefix\n` +
-            `\`?help\` / \`/help\` — View this codex`, 
+            `\`?help\` / \`/help\` — View this guide`, 
           inline: false 
         }
       )
