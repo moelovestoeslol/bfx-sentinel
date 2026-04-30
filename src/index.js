@@ -16,9 +16,6 @@ client.commands = new Collection();
 client.prefix = process.env.PREFIX || '?';
 client.warnings = new Map();
 
-// --- SAFETY NET: DEDUPLICATION ---
-const processedMessages = new Set();
-
 // --- 1. Load Commands ---
 const commandsPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(commandsPath);
@@ -94,64 +91,8 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
-// --- 4. Message Handler (Prefix Commands & Auto-Reply) ---
-client.on('messageCreate', async (message) => {
-  if (message.author.bot || !message.guild) return;
-
-  // SAFETY NET: Check if this message was already processed in the last 2 seconds
-  if (processedMessages.has(message.id)) return;
-  processedMessages.add(message.id);
-  setTimeout(() => processedMessages.delete(message.id), 2000);
-
-  // 1. Handle Prefix Commands (?ban, ?kick, etc.)
-  if (message.content.startsWith(client.prefix)) {
-    const args = message.content.slice(client.prefix.length).trim().split(/ +/);
-    const commandName = args.shift().toLowerCase();
-    const command = client.commands.get(commandName);
-    
-    if (command) {
-      try {
-        await command.execute(message, args, client);
-      } catch (error) {
-        console.error(error);
-      }
-      return;
-    }
-  }
-
-  // 2. Handle Mentions/Replies for the Branding Menu
-  const isMentioned = message.content.includes(`<@${client.user.id}>`) || message.content.includes(`<@!${client.user.id}>`);
-  const isReplyToBot = message.reference && 
-                       (await message.channel.messages.fetch(message.reference.messageId).catch(() => null))?.author.id === client.user.id;
-
-  if (isReplyToBot || isMentioned) {
-    const replyEmbed = new EmbedBuilder()
-      .setColor(0x010101)
-      .setTitle(`[ BFX STOCKS Services ]`)
-      .setThumbnail(client.user.displayAvatarURL())
-      .setDescription(
-        `🌟 **Hey** ${message.author}\n` +
-        `➡️ **Prefix For This Server:** \`${client.prefix}\`\n\n` +
-        `*Type \`${client.prefix}help\` for more information.*`
-      )
-      .setFooter({ text: 'Powered by The Sentinel™', iconURL: client.user.displayAvatarURL() });
-
-    const menu = new ActionRowBuilder()
-      .addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId('help_menu')
-          .setPlaceholder('Start With The Sentinel')
-          .addOptions([
-            { label: 'Help', description: 'Show every command available', value: 'show_help', emoji: '📋' },
-            { label: 'Developer', description: 'View the elite team behind the bot', value: 'show_dev', emoji: '🛡️' }
-          ]),
-      );
-
-    await message.reply({ embeds: [replyEmbed], components: [menu] }).catch(() => null);
-  }
-});
-
-// --- 5. Load Events ---
+// --- 4. Load Events ---
+// This handles messageCreate.js and all other events automatically
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'));
 for (const file of eventFiles) {
