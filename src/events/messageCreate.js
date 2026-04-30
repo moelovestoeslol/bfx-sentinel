@@ -5,15 +5,12 @@ const processedMessages = new Set();
 module.exports = {
   name: 'messageCreate',
   async execute(message, client) {
-    // 1. Basic checks
     if (message.author.bot || !message.guild) return;
 
-    // 2. Deduplication Safety Net
     if (processedMessages.has(message.id)) return;
     processedMessages.add(message.id);
     setTimeout(() => processedMessages.delete(message.id), 3000);
 
-    // 3. Handle Prefix Commands
     if (message.content.startsWith(client.prefix)) {
       const args = message.content.slice(client.prefix.length).trim().split(/ +/);
       const commandName = args.shift().toLowerCase();
@@ -23,20 +20,16 @@ module.exports = {
         try {
           await command.execute(message, args, client);
         } catch (error) {
-          console.error(`Error executing ${commandName}:`, error);
+          console.error(`Error:`, error);
         }
         return; 
       }
     }
 
-    // 4. Mentions/Replies (Menu Trigger with Anti-Loop)
     const isMentioned = message.content.includes(`<@${client.user.id}>`) || message.content.includes(`<@!${client.user.id}>`);
-    
-    // Safety check: Is the user replying to a message from the bot?
     const isReplyToBot = message.reference && 
                          (await message.channel.messages.fetch(message.reference.messageId).catch(() => null))?.author.id === client.user.id;
 
-    // Only trigger if mentioned AND NOT a reply to the bot's own message
     if (isMentioned && !isReplyToBot) {
       const replyEmbed = new EmbedBuilder()
         .setColor(0x010101)
