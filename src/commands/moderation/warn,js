@@ -1,49 +1,63 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
   name: 'warn',
-  async execute(message, args, client) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers))
-      return message.reply('❌ You do not have permission to warn members.');
+  description: 'Warns a member',
+  data: new SlashCommandBuilder()
+    .setName('warn')
+    .setDescription('Issues a warning to a member')
+    .addUserOption(option => option.setName('target').setDescription('The member to warn').setRequired(true))
+    .addStringOption(option => option.setName('reason').setDescription('Reason for the warning'))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
-    const target = message.mentions.members.first();
-    if (!target) return message.reply('❌ Please mention a user to warn.');
+  async execute(context, arg1, arg2) {
+    const isSlash = !!context.isChatInputCommand?.();
+    const args = isSlash ? [] : arg1;
+    const client = isSlash ? arg1 : arg2;
+    const modTag = isSlash ? context.user.tag : context.author.tag;
 
-    const reason = args.slice(1).join(' ') || 'No reason provided';
+    if (!context.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+      const errorMsg = '❌ You do not have permission to warn members.';
+      return isSlash ? context.reply({ content: errorMsg, ephemeral: true }) : context.reply(errorMsg);
+    }
+
+    const target = isSlash ? context.options.getMember('target') : context.mentions.members.first();
+    const reason = isSlash ? context.options.getString('reason') : args.slice(1).join(' ');
+    const finalReason = reason || 'No reason provided';
+
+    if (!target) return isSlash ? context.reply({ content: '❌ Please provide a user.', ephemeral: true }) : context.reply('❌ Please mention a user to warn.');
+
     const userId = target.user.id;
-    const guildId = message.guild.id;
+    const guildId = context.guild.id;
     const key = `${guildId}-${userId}`;
 
-    // Add warning
     if (!client.warnings.has(key)) client.warnings.set(key, []);
     const userWarnings = client.warnings.get(key);
-    userWarnings.push({ reason, mod: message.author.tag, date: new Date().toISOString() });
+    userWarnings.push({ reason: finalReason, mod: modTag, date: new Date().toISOString() });
     client.warnings.set(key, userWarnings);
 
     const warnCount = userWarnings.length;
 
-    // DM the warned user
     try {
-      await target.user.send(`⚠️ You have been warned in **${message.guild.name}**\n**Reason:** ${reason}\n**Total warnings:** ${warnCount}`);
+      await target.user.send(`⚠️ You have been warned in **${context.guild.name}**\n**Reason:** ${finalReason}\n**Total warnings:** ${warnCount}`);
     } catch {}
 
     const embed = new EmbedBuilder()
-      .setColor(0xffaa00)
+      .setColor(0x000000)
       .setTitle('⚠️ Member Warned')
       .addFields(
         { name: 'User', value: `${target.user.tag}`, inline: true },
-        { name: 'Moderator', value: `${message.author.tag}`, inline: true },
+        { name: 'Moderator', value: modTag, inline: true },
         { name: 'Total Warnings', value: `${warnCount}`, inline: true },
-        { name: 'Reason', value: reason },
+        { name: 'Reason', value: finalReason },
       )
       .setTimestamp();
 
-    message.channel.send({ embeds: [embed] });
+    await context.reply({ embeds: [embed] });
 
-    // Auto-punish at 3 warnings
     if (warnCount >= 3) {
       await target.timeout(10 * 60000, 'Reached 3 warnings');
-      message.channel.send(`⚠️ ${target.user.tag} has reached **3 warnings** and has been timed out for 10 minutes.`);
+      context.channel.send(`⚠️ ${target.user.tag} has reached **3 warnings** and has been timed out for 10 minutes.`);
     }
   },
 };
