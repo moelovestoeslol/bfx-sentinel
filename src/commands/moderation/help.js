@@ -6,45 +6,45 @@ module.exports = {
   async execute(message, args, client) {
     const helpEmbed = new EmbedBuilder()
       .setColor(0x010101)
-      .setTitle('「 SENTINEL COMMAND CODEX 」')
+      .setTitle('「 SENTINEL COMMANDS 」')
       .setThumbnail(client.user.displayAvatarURL())
-      .setDescription('*Advanced protection and utility for BFX STOCKS Services.*')
+      .setDescription('*Advanced protection architecture for BFX STOCKS Services.*')
       .addFields(
         { 
           name: '🛡️ OWNER ONLY (Sentinel Guard)', 
           value: 
-            `**Control:** \`?automod on\` | \`?automod off\`\n` +
-            `**Whitelist:** \`?automod wl @user\`\n` +
-            `**De-list:** \`?automod remove @user\`\n` +
-            `*Slash commands available for all above.*`, 
+            `\`?automod on\` / \`/automod on\`\n` +
+            `\`?automod off\` / \`/automod off\`\n` +
+            `\`?automod wl @user\` / \`/automod wl @user\`\n` +
+            `\`?automod remove @user\` / \`/automod remove @user\``, 
           inline: false 
         },
         { 
-          name: '⚙️ CONFIGURATION & INFO', 
+          name: '⚔️ MODERATION', 
           value: 
-            `\`?prefix [symbol]\` - Change system prefix\n` +
-            `\`?help\` - Show this codex\n` +
-            `\`/help\` - Access interactive slash help`, 
+            `\`?ban\` / \`/ban\` — Terminate access\n` +
+            `\`?timeout\` / \`/timeout\` — Temporary silence\n` +
+            `\`?warn\` / \`/warn\` — Log violation\n` +
+            `\`?warnings\` / \`/warnings\` — View history\n` +
+            `\`?clearwarnings\` / \`/clearwarnings\` — Wipe history`, 
           inline: false 
         },
-        {
-          name: '📋 GENERAL UTILITY',
-          value:
-            `\`?ban\` | \`?kick\` | \`?warn\`\n` +
-            `*Standard moderation suite active.*`,
-          inline: false
+        { 
+          name: '⚙️ SYSTEM', 
+          value: 
+            `\`?prefix [symbol]\` — Change system prefix\n` +
+            `\`?help\` / \`/help\` — View this codex`, 
+          inline: false 
         }
       )
       .setFooter({ 
-        text: 'The Sentinel™ | Pure Performance', 
+        text: 'The Sentinel™ v2.0', 
         iconURL: client.user.displayAvatarURL() 
       });
 
-    // Handle both Prefix and Interaction (Menu) calls
     if (message.reply) {
       await message.reply({ embeds: [helpEmbed] });
     } else {
-      // This part ensures it works when users click 'Help' in the branding menu
       await message.editReply({ embeds: [helpEmbed], components: [] });
     }
   },
