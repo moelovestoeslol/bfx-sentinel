@@ -11,7 +11,7 @@ module.exports = {
 
     if (!target) return message.reply('❌ Please mention a user or provide a valid User ID.');
     
-    // Protection Logic
+    // STOP LOGIC: Prevents code from continuing if user is protected
     if (target.id === message.author.id) return message.reply('❌ You cannot warn yourself.');
     if (eliteTrio.includes(target.id)) return message.reply('❌ **ACCESS DENIED** | This user is part of the Elite Trio and cannot be warned.');
 
@@ -54,14 +54,15 @@ module.exports = {
       )
       .setTimestamp();
 
-    message.channel.send({ embeds: [embed] });
+    // Changed to message.reply to ensure it links to the command
+    await message.reply({ embeds: [embed] });
 
     if (warnCount >= 3) {
       try {
         await target.timeout(10 * 60000, 'Reached 3 warnings');
         message.channel.send(`🚨 **${target.user.tag}** has reached **3 warnings** and has been auto-timed out.`);
       } catch (err) {
-        message.channel.send(`❌ Failed to auto-timeout ${target.user.tag}.`);
+        console.log(`Failed to auto-timeout ${target.user.tag}.`);
       }
     }
   },
