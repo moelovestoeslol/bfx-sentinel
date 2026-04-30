@@ -1,9 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const timeUnits = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
+const eliteTrio = ['1424300320967884811', '1479660280555376853', '1014550997072347137'];
 
 module.exports = {
   name: 'timeout',
-  description: 'Timeouts a member',
   data: new SlashCommandBuilder()
     .setName('timeout')
     .setDescription('Timeout/Mute a member')
@@ -16,45 +16,50 @@ module.exports = {
     const isSlash = !!context.isChatInputCommand?.();
     const args = isSlash ? [] : arg1;
     const client = isSlash ? arg1 : arg2;
+    const moderator = isSlash ? context.user : context.author;
 
-    if (!context.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-      const errorMsg = '❌ You do not have permission to timeout members.';
-      return isSlash ? context.reply({ content: errorMsg, ephemeral: true }) : context.reply(errorMsg);
-    }
+    if (!context.member.permissions.has(PermissionFlagsBits.ModerateMembers)) return context.reply('❌ No permission.');
 
     const target = isSlash ? context.options.getMember('target') : context.mentions.members.first();
     const durationArg = isSlash ? context.options.getString('duration') : args[1];
     
-    if (!target) return isSlash ? context.reply({ content: '❌ Please provide a user.', ephemeral: true }) : context.reply('❌ Please mention a user to timeout.');
-    if (!durationArg) return isSlash ? context.reply({ content: `❌ Example: \`${client.prefix}timeout @user 10m\``, ephemeral: true }) : context.reply(`❌ Example: \`${client.prefix}timeout @user 10m\``);
+    if (!target) return context.reply('❌ Provide a user.');
+    
+    // Protection
+    if (target.id === moderator.id) return context.reply('❌ You cannot mute yourself.');
+    if (eliteTrio.includes(target.id)) return context.reply('❌ **ACCESS DENIED** | Owners cannot be silenced.');
 
-    const unit = durationArg.slice(-1).toLowerCase();
-    const amount = parseInt(durationArg.slice(0, -1));
+    const unit = durationArg?.slice(-1).toLowerCase();
+    const amount = parseInt(durationArg?.slice(0, -1));
 
-    if (!timeUnits[unit] || isNaN(amount) || amount <= 0) {
-      const errorMsg = '❌ Invalid duration. Use formats like: `10s`, `5m`, `2h`, `1d`';
-      return isSlash ? context.reply({ content: errorMsg, ephemeral: true }) : context.reply(errorMsg);
-    }
+    if (!timeUnits[unit] || isNaN(amount)) return context.reply('❌ Invalid duration (10s, 5m, 1h).');
 
     const ms = amount * timeUnits[unit];
-    if (ms > 28 * 86400000) {
-        const errorMsg = '❌ Timeout cannot exceed 28 days.';
-        return isSlash ? context.reply({ content: errorMsg, ephemeral: true }) : context.reply(errorMsg);
-    }
+    const reason = (isSlash ? context.options.getString('reason') : args.slice(2).join(' ')) || 'No reason provided';
 
-    const reason = isSlash ? context.options.getString('reason') : args.slice(2).join(' ');
-    const finalReason = reason || 'No reason provided';
+    // DM Notification
+    const dmEmbed = new EmbedBuilder()
+      .setColor(0x010101)
+      .setTitle('「 SENTINEL RESTRICTION 」')
+      .setDescription(`Your communication has been restricted in **${context.guild.name}**.`)
+      .addFields(
+        { name: '⏳ Duration', value: durationArg, inline: true },
+        { name: '📝 Reason', value: reason, inline: true }
+      )
+      .setFooter({ text: 'Sentinel™ Security' });
 
-    await target.timeout(ms, finalReason);
+    await target.send({ embeds: [dmEmbed] }).catch(() => null);
+
+    await target.timeout(ms, reason);
 
     const embed = new EmbedBuilder()
-      .setColor(0x000000)
+      .setColor(0x010101)
       .setTitle('⏱️ Member Timed Out')
       .addFields(
         { name: 'User', value: `${target.user.tag}`, inline: true },
-        { name: 'Moderator', value: `${isSlash ? context.user.tag : context.author.tag}`, inline: true },
+        { name: 'Moderator', value: `${moderator.tag}`, inline: true },
         { name: 'Duration', value: durationArg, inline: true },
-        { name: 'Reason', value: finalReason },
+        { name: 'Reason', value: reason },
       )
       .setTimestamp();
 
