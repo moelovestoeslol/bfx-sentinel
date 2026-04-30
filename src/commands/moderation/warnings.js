@@ -1,45 +1,48 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   name: 'warnings',
-  description: 'View a users warnings',
+  description: 'Check total warnings for a user',
   data: new SlashCommandBuilder()
     .setName('warnings')
-    .setDescription('Check how many warnings a user has')
-    .addUserOption(option => option.setName('target').setDescription('The member to check').setRequired(true))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+    .setDescription('Check total warnings for a user')
+    .addUserOption(option => option.setName('target').setDescription('The user to check').setRequired(true)),
 
-  async execute(context, arg1, arg2) {
-    const isSlash = !!context.isChatInputCommand?.();
-    const client = isSlash ? arg1 : arg2;
+  async execute(context, args, client) {
+    const target = context.options?.getUser('target') || 
+                   context.mentions?.users.first() || 
+                   (args && args[0] ? await client.users.fetch(args[0]).catch(() => null) : null);
 
-    if (!context.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-      const errorMsg = '❌ You do not have permission to view warnings.';
-      return isSlash ? context.reply({ content: errorMsg, ephemeral: true }) : context.reply(errorMsg);
+    if (!target) {
+      const errorEmbed = new EmbedBuilder()
+        .setColor(0xFF0000)
+        .setDescription('❌ Please mention a valid user to check warnings.');
+      return context.reply ? context.reply({ embeds: [errorEmbed] }) : context.channel.send({ embeds: [errorEmbed] });
     }
 
-    const target = isSlash ? context.options.getUser('target') : context.mentions.users.first();
-    if (!target) return isSlash ? context.reply({ content: '❌ Please provide a user.', ephemeral: true }) : context.reply('❌ Please mention a user to check warnings.');
-
-    const key = `${context.guild.id}-${target.id}`;
-    const userWarnings = client.warnings.get(key) || [];
-
-    if (userWarnings.length === 0) {
-      const msg = `✅ ${target.tag} has no warnings.`;
-      return context.reply({ content: msg });
-    }
-
-    const warnList = userWarnings
-      .map((w, i) => `**${i + 1}.** ${w.reason} — by ${w.mod}`)
-      .join('\n');
+    const userWarnings = client.warnings.get(target.id) || [];
+    const totalWarnings = userWarnings.length;
 
     const embed = new EmbedBuilder()
-      .setColor(0x000000)
+      .setColor(0x010101)
       .setTitle(`⚠️ Warnings for ${target.tag}`)
-      .setDescription(warnList)
-      .setFooter({ text: `Total: ${userWarnings.length} warning(s)` })
+      .setThumbnail(target.displayAvatarURL())
+      .setDescription(`**Total Warnings:** \`${totalWarnings}\``)
+      .addFields(
+        { 
+          name: 'History', 
+          value: totalWarnings > 0 
+            ? userWarnings.map((w, i) => `**${i + 1}.** ${w.reason} (By: ${w.moderator})`).join('\n') 
+            : 'This user has a clean record!' 
+        }
+      )
+      .setFooter({ text: 'The Sentinel™ Moderation', iconURL: client.user.displayAvatarURL() })
       .setTimestamp();
 
-    await context.reply({ embeds: [embed] });
+    if (context.reply) {
+      return await context.reply({ embeds: [embed] });
+    } else {
+      return await context.channel.send({ embeds: [embed] });
+    }
   },
 };
