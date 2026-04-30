@@ -5,13 +5,15 @@ const processedMessages = new Set();
 module.exports = {
   name: 'messageCreate',
   async execute(message, client) {
+    // 1. Basic checks
     if (message.author.bot || !message.guild) return;
 
+    // 2. Deduplication Safety Net
     if (processedMessages.has(message.id)) return;
     processedMessages.add(message.id);
     setTimeout(() => processedMessages.delete(message.id), 3000);
 
-    // 1. Prefix Commands
+    // 3. Handle Prefix Commands
     if (message.content.startsWith(client.prefix)) {
       const args = message.content.slice(client.prefix.length).trim().split(/ +/);
       const commandName = args.shift().toLowerCase();
@@ -27,7 +29,7 @@ module.exports = {
       }
     }
 
-    // 2. Mentions/Replies (Menu Trigger)
+    // 4. Mentions/Replies (Menu Trigger with Anti-Loop)
     const isMentioned = message.content.includes(`<@${client.user.id}>`) || message.content.includes(`<@!${client.user.id}>`);
     
     // Safety check: Is the user replying to a message from the bot?
@@ -43,7 +45,8 @@ module.exports = {
         .setDescription(
           `🌟 **Welcome back,** ${message.author}\n\n` +
           `> **System Prefix:** \`${client.prefix}\`\n` +
-          `> **Guard Status:** \`${client.autoModEnabled ? '🟢 ONLINE' : '🔴 OFFLINE'}\`\n\n` +
+          `> **Guard Status:** \`${client.autoModEnabled ? '🟢 ONLINE' : '🔴 OFFLINE'}\`\n` +
+          `> **Version:** \`v2.0-STABLE\`\n\n` +
           `*Select an option below to explore the **Sentinel** architecture.*`
         )
         .setFooter({ text: 'Powered by The Sentinel™', iconURL: client.user.displayAvatarURL() });
