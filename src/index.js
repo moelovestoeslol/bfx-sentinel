@@ -43,13 +43,17 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 })();
 
 // --- 3. Interaction Handler (Slash & Menus) ---
-client.on('interactionCreate', async interaction => {
-  if (interaction.isChatInputCommand()) {
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
-    try { await command.execute(interaction, client); } catch (error) { console.error(error); }
-  }
-
+if (selection === 'show_help') {
+        const helpCommand = client.commands.get('help');
+        if (helpCommand) {
+          try {
+            // Passing 'interaction' as the first argument (context)
+            await helpCommand.execute(interaction, [], client);
+          } catch (err) {
+            console.error("Help Menu Error:", err);
+          }
+        }
+      }
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId === 'help_menu') {
       const selection = interaction.values[0];
