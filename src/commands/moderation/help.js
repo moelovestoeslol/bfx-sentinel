@@ -36,4 +36,4 @@ module.exports = {
 
     await context.reply({ embeds: [embed] });
   },
-};};
+};
