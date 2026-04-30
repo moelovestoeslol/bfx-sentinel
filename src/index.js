@@ -43,25 +43,33 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 })();
 
 // --- 3. Interaction Handler (Slash & Menus) ---
-if (selection === 'show_help') {
-        const helpCommand = client.commands.get('help');
-        if (helpCommand) {
-          try {
-            // Passing 'interaction' as the first argument (context)
-            await helpCommand.execute(interaction, [], client);
-          } catch (err) {
-            console.error("Help Menu Error:", err);
-          }
-        }
-      }
+client.on('interactionCreate', async (interaction) => {
+  // Handle Slash Commands
+  if (interaction.isChatInputCommand()) {
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+    try {
+      await command.execute(interaction, client);
+    } catch (error) {
+      console.error(error);
+      if (!interaction.replied) await interaction.reply({ content: 'Error executing command!', ephemeral: true });
+    }
+  }
+
+  // Handle Select Menu (The Bar)
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId === 'help_menu') {
       const selection = interaction.values[0];
 
       if (selection === 'show_help') {
         const helpCommand = client.commands.get('help');
-        // We pass an empty array [] to simulate the "args" for prefix commands
-        if (helpCommand) await helpCommand.execute(interaction, [], client);
+        if (helpCommand) {
+          try {
+            await helpCommand.execute(interaction, [], client);
+          } catch (err) {
+            console.error("Help Menu Error:", err);
+          }
+        }
       }
 
       if (selection === 'show_dev') {
@@ -85,50 +93,56 @@ if (selection === 'show_help') {
   }
 });
 
-// --- 4. Reply Detection & Custom Help Menu ---
+// --- 4. Message Handler (Prefix Commands & Auto-Reply) ---
 client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
+  if (message.author.bot || !message.guild) return;
 
-    // Trigger on bot mention OR reply to bot
-    const isMentioned = message.content.includes(`<@${client.user.id}>`);
-    const isReplyToBot = message.reference && 
-                         (await message.channel.messages.fetch(message.reference.messageId)).author.id === client.user.id;
-
-    if (isReplyToBot || isMentioned) {
-        const replyEmbed = new EmbedBuilder()
-            .setColor(0x010101)
-            .setTitle(`[ BFX STOCKS Services ]`)
-            .setThumbnail(client.user.displayAvatarURL())
-            .setDescription(
-                `🌟 **Hey** ${message.author}\n` +
-                `➡️ **Prefix For This Server:** \`${client.prefix}\`\n\n` +
-                `*Type \`${client.prefix}help\` for more information.*`
-            )
-            .setFooter({ text: 'Powered by The Sentinel™', iconURL: client.user.displayAvatarURL() });
-
-        const menu = new ActionRowBuilder()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId('help_menu')
-                    .setPlaceholder('Start With The Sentinel')
-                    .addOptions([
-                        {
-                            label: 'Help',
-                            description: 'Show every command available',
-                            value: 'show_help',
-                            emoji: '📋',
-                        },
-                        {
-                          label: 'Developer',
-                          description: 'View the elite team behind the bot',
-                          value: 'show_dev',
-                          emoji: '🛡️',
-                        }
-                    ]),
-            );
-
-        await message.reply({ embeds: [replyEmbed], components: [menu] });
+  // 1. Handle Prefix Commands (?ban, ?kick, etc.)
+  if (message.content.startsWith(client.prefix)) {
+    const args = message.content.slice(client.prefix.length).trim().split(/ +/);
+    const commandName = args.shift().toLowerCase();
+    const command = client.commands.get(commandName);
+    
+    if (command) {
+      try {
+        await command.execute(message, args, client);
+      } catch (error) {
+        console.error(error);
+      }
+      return;
     }
+  }
+
+  // 2. Handle Mentions/Replies for the Branding Menu
+  const isMentioned = message.content.includes(`<@${client.user.id}>`);
+  const isReplyToBot = message.reference && 
+                       (await message.channel.messages.fetch(message.reference.messageId).catch(() => null))?.author.id === client.user.id;
+
+  if (isReplyToBot || isMentioned) {
+    const replyEmbed = new EmbedBuilder()
+      .setColor(0x010101)
+      .setTitle(`[ BFX STOCKS Services ]`)
+      .setThumbnail(client.user.displayAvatarURL())
+      .setDescription(
+        `🌟 **Hey** ${message.author}\n` +
+        `➡️ **Prefix For This Server:** \`${client.prefix}\`\n\n` +
+        `*Type \`${client.prefix}help\` for more information.*`
+      )
+      .setFooter({ text: 'Powered by The Sentinel™', iconURL: client.user.displayAvatarURL() });
+
+    const menu = new ActionRowBuilder()
+      .addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId('help_menu')
+          .setPlaceholder('Start With The Sentinel')
+          .addOptions([
+            { label: 'Help', description: 'Show every command available', value: 'show_help', emoji: '📋' },
+            { label: 'Developer', description: 'View the elite team behind the bot', value: 'show_dev', emoji: '🛡️' }
+          ]),
+      );
+
+    await message.reply({ embeds: [replyEmbed], components: [menu] }).catch(() => null);
+  }
 });
 
 // --- 5. Load Events ---
