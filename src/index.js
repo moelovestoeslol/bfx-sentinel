@@ -16,6 +16,9 @@ client.commands = new Collection();
 client.prefix = process.env.PREFIX || '?';
 client.warnings = new Map();
 
+// --- SAFETY NET: DEDUPLICATION ---
+const processedMessages = new Set();
+
 // --- 1. Load Commands ---
 const commandsPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(commandsPath);
@@ -44,7 +47,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
 // --- 3. Interaction Handler (Slash & Menus) ---
 client.on('interactionCreate', async (interaction) => {
-  // Handle Slash Commands
   if (interaction.isChatInputCommand()) {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
@@ -56,7 +58,6 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
-  // Handle Select Menu (The Bar)
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId === 'help_menu') {
       const selection = interaction.values[0];
@@ -97,6 +98,11 @@ client.on('interactionCreate', async (interaction) => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot || !message.guild) return;
 
+  // SAFETY NET: Check if this message was already processed in the last 2 seconds
+  if (processedMessages.has(message.id)) return;
+  processedMessages.add(message.id);
+  setTimeout(() => processedMessages.delete(message.id), 2000);
+
   // 1. Handle Prefix Commands (?ban, ?kick, etc.)
   if (message.content.startsWith(client.prefix)) {
     const args = message.content.slice(client.prefix.length).trim().split(/ +/);
@@ -114,7 +120,7 @@ client.on('messageCreate', async (message) => {
   }
 
   // 2. Handle Mentions/Replies for the Branding Menu
-  const isMentioned = message.content.includes(`<@${client.user.id}>`);
+  const isMentioned = message.content.includes(`<@${client.user.id}>`) || message.content.includes(`<@!${client.user.id}>`);
   const isReplyToBot = message.reference && 
                        (await message.channel.messages.fetch(message.reference.messageId).catch(() => null))?.author.id === client.user.id;
 
