@@ -16,6 +16,11 @@ client.commands = new Collection();
 client.prefix = process.env.PREFIX || '?';
 client.warnings = new Map();
 
+// --- AUTO-MOD & OWNER CONFIGURATION ---
+client.autoModEnabled = true; 
+// IDs: Nuh, Karan, wtreboi
+client.whitelistedUsers = new Set(['1424300320967884811', '1479660280555376853', '1014550997072347137']);
+
 // --- 1. Load Commands ---
 const commandsPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(commandsPath);
@@ -92,7 +97,6 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // --- 4. Load Events ---
-// This handles messageCreate.js and all other events automatically
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'));
 for (const file of eventFiles) {
