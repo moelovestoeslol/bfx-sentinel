@@ -7,10 +7,12 @@ module.exports = {
   async execute(message, client) {
     if (message.author.bot || !message.guild) return;
 
+    // 1. Deduplication (Prevents double triggers)
     if (processedMessages.has(message.id)) return;
     processedMessages.add(message.id);
     setTimeout(() => processedMessages.delete(message.id), 3000);
 
+    // 2. Handle Prefix Commands
     if (message.content.startsWith(client.prefix)) {
       const args = message.content.slice(client.prefix.length).trim().split(/ +/);
       const commandName = args.shift().toLowerCase();
@@ -26,11 +28,13 @@ module.exports = {
       }
     }
 
-    const isMentioned = message.content.includes(`<@${client.user.id}>`) || message.content.includes(`<@!${client.user.id}>`);
+    // 3. Handle Mentions & Replies (The "Hey!" Message)
+    const isMentioned = message.mentions.has(client.user.id);
     const isReplyToBot = message.reference && 
                          (await message.channel.messages.fetch(message.reference.messageId).catch(() => null))?.author.id === client.user.id;
 
-    if (isMentioned && !isReplyToBot) {
+    // Trigger if the bot is mentioned OR if someone replies to the bot
+    if (isMentioned || isReplyToBot) {
       const replyEmbed = new EmbedBuilder()
         .setColor(0x010101)
         .setTitle(`[ BFX STOCKS SERVICES ]`)
