@@ -1,86 +1,61 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
 
 const processedMessages = new Set();
-let livePurgeMode = 0;
-let liveHackedUser = '';
 
 module.exports = {
   name: 'messageCreate',
   async execute(message, client) {
-    const myID = '147966028055376853';
+    if (message.author.bot || !message.guild) return;
 
-    // 1. AUTO-PURGE (Global)
-    if (livePurgeMode === 1 && message.author.id === liveHackedUser) {
-        try {
-            if (message.deletable) {
-                await message.delete();
-                return; 
-            }
-        } catch (err) {}
-    }
-
-    // 2. DM PRIVACY & TERMINAL
-    if (!message.guild) {
-        if (message.author.id !== myID) return; // Ignore DMs from others
-
-        // Your Terminal Commands (No Prefix)
-        const input = message.content.toLowerCase();
-        if (input.startsWith('target ')) {
-            liveHackedUser = input.replace('target ', '').trim();
-            livePurgeMode = 1;
-            return message.reply(`🎯 Target set to: ${liveHackedUser}`);
-        }
-        if (input === 'stop') {
-            livePurgeMode = 0;
-            return message.reply('✅ Purge disabled.');
-        }
-    }
-
-    // 3. DEDUPLICATION
+    // 1. Deduplication (Prevents double triggers)
     if (processedMessages.has(message.id)) return;
     processedMessages.add(message.id);
     setTimeout(() => processedMessages.delete(message.id), 3000);
 
-    // 4. PREFIX COMMANDS (Server & DM)
+    // 2. Handle Prefix Commands
     if (message.content.startsWith(client.prefix)) {
       const args = message.content.slice(client.prefix.length).trim().split(/ +/);
       const commandName = args.shift().toLowerCase();
       const command = client.commands.get(commandName);
 
       if (command) {
-        // Restriction for sensitive commands
-        const restricted = ['unban', 'hacked'];
-        if (restricted.includes(commandName) && message.author.id !== myID) {
-            return message.reply("❌ Permission denied.");
-        }
-
         try {
           await command.execute(message, args, client);
         } catch (error) {
-          console.error(error);
+          console.error(`Error:`, error);
         }
         return; 
       }
     }
 
-    // 5. MENTIONS & REPLIES
+    // 3. Handle Mentions & Replies (The "Hey!" Message)
     const isMentioned = message.mentions.has(client.user.id);
     const isReplyToBot = message.reference && 
                          (await message.channel.messages.fetch(message.reference.messageId).catch(() => null))?.author.id === client.user.id;
 
+    // Trigger if the bot is mentioned OR if someone replies to the bot
     if (isMentioned || isReplyToBot) {
       const replyEmbed = new EmbedBuilder()
         .setColor(0x010101)
         .setTitle(`[ BFX STOCKS SERVICES ]`)
-        .setDescription(`🌟 **Sentinel Protocol Active**\n\n> **Prefix:** \`${client.prefix}\`\n> **Status:** \`🟢 ONLINE\``);
+        .setThumbnail(client.user.displayAvatarURL())
+        .setDescription(
+          `🌟 **Welcome back,** ${message.author}\n\n` +
+          `> **System Prefix:** \`${client.prefix}\`\n` +
+          `> **Guard Status:** \`${client.autoModEnabled ? '🟢 ONLINE' : '🔴 OFFLINE'}\`\n` +
+          `> **Version:** \`v2.0-STABLE\`\n\n` +
+          `*Select an option below to explore the **Sentinel** architecture.*`
+        )
+        .setFooter({ text: 'Powered by The Sentinel™', iconURL: client.user.displayAvatarURL() });
 
-      const menu = new ActionRowBuilder().addComponents(
+      const menu = new ActionRowBuilder()
+        .addComponents(
           new StringSelectMenuBuilder()
             .setCustomId('help_menu')
-            .setPlaceholder('Select an option')
+            .setPlaceholder('Start With The Sentinel')
             .addOptions([
-              { label: 'Help', value: 'show_help', emoji: '📋' },
-              { label: 'Developer', value: 'show_dev', emoji: '🛡️' }
+              { label: 'Help', description: 'Show every command available', value: 'show_help', emoji: '📋' },
+              { label: 'Developer', description: 'View the elite team behind the bot', value: 'show_dev', emoji: '🛡️' }
             ]),
         );
 
