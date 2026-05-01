@@ -11,21 +11,20 @@ module.exports = {
       .setDescription('*Advanced protection architecture for BFX STOCKS Services.*')
       .addFields(
         { 
-          name: '🛡️ OWNER ONLY (Elite Trio)', 
+          name: '🛡️ OWNER SERVICES', 
           value: 
-            `\`?lockdown\` — **Emergency server silence**\n` +
+            `\`?lock\` — Lock current channel\n` +
             `\`?automod on/off\` — Toggle security\n` +
-            `\`?automod wl/remove @user\` — Manage whitelist\n` +
             `\`?enablestock #channel\` — Setup auto-stock updates\n` +
             `\`?disablestock\` — Stop auto-stock updates`, 
           inline: false 
         },
         { 
-          name: '⚔️ MODERATION', 
+          name: '⚔️ MODERATION & UTILITY', 
           value: 
             `\`?ban\` / \`?timeout\`\n` +
             `\`?warn\` / \`?warnings\`\n` +
-            `\`?clearwarnings\``, 
+            `\`?unrape\` — Counter-measure`, 
           inline: false 
         },
         { 
@@ -49,10 +48,6 @@ module.exports = {
         iconURL: client.user.displayAvatarURL() 
       });
 
-    if (message.reply) {
-      await message.reply({ embeds: [helpEmbed] });
-    } else {
-      await message.editReply({ embeds: [helpEmbed], components: [] });
-    }
+    await message.reply({ embeds: [helpEmbed] });
   },
 };
