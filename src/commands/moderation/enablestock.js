@@ -21,16 +21,20 @@ module.exports = {
         if (!client.stockChannel) return;
 
         try {
-          // Added headers here too
-          const { data } = await axios.get('https://blox-fruits.fandom.com/wiki/Blox_Fruits_Wiki', {
+          // Using API endpoint for the background loop
+          const { data } = await axios.get('https://blox-fruits.fandom.com/api.php?action=parse&page=Blox_Fruits_Wiki&format=json', {
             headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'application/json',
+              'Referer': 'https://blox-fruits.fandom.com/wiki/Blox_Fruits_Wiki'
             }
           });
-          const $ = cheerio.load(data);
+          
+          const html = data.parse.text['*'];
+          const $ = cheerio.load(html);
           
           let currentStock = [];
-          $('.stock-container .fruit-name').each((i, el) => {
+          $('.fruit-name').each((i, el) => {
             currentStock.push($(el).text().trim());
           });
 
@@ -49,7 +53,7 @@ module.exports = {
             await targetChannel.send({ content, embeds: [stockEmbed] });
           }
         } catch (err) {
-          console.error("Stock fetch failed in loop.");
+          console.error("Auto stock fetch failed in loop:", err.message);
         }
       }, 3600000); 
     }
