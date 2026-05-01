@@ -1,4 +1,4 @@
-odule.exports = {
+module.exports = {
     name: 'rape',
     description: 'rape a member',
     async execute(message, args, client) {
