@@ -1,7 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-
 module.exports = {
-    name: 'hi-skibidi',
+    name: 'hi',
     description: 'basic greeting',
     async execute(message, args, client) {
         const mode = 1; 
@@ -14,7 +12,11 @@ module.exports = {
         }
 
         if (!hasPerms) return message.reply('no perms LOL.');
-
-        message.reply('hi skibidi :wave:');
+        // This checks if you typed "?hi skibidi"
+        if (args[0] === 'skibidi') {
+            message.reply('hi skibidi 👋');
+        } else {
+            message.reply('hi!');
+        }
     },
 };
