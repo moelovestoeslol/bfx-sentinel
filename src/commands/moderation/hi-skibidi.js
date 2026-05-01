@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
-    name: 'hi skibidi',
+    name: 'hi-skibidi',
     description: 'basic greeting',
     async execute(message, args, client) {
         const mode = 1; 
