@@ -1,3 +1,5 @@
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+
 module.exports = {
     name: 'hi skibidi',
     description: 'basic greeting',
