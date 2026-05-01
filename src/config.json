@@ -2,5 +2,5 @@
   "eliteTrio": ["1424300320967884811", "147966028055376853", "1014550997072347137"],
   "pingRoleId": "1279282973916790837"
   "route for copypaste (dont touch this)": "const { eliteTrio } = require('../../config.json');",
-  "purgeMode": 1
+  "purgeMode": 0 
 }
