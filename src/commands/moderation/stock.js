@@ -13,13 +13,17 @@ module.exports = {
         const msg = await message.reply('🔍 Searching Wiki for stock...');
 
         try {
-            // Added headers to bypass 403 Forbidden error
-            const { data } = await axios.get('https://blox-fruits.fandom.com/wiki/Blox_Fruits_Wiki', {
+            // Using API endpoint to bypass data-center IP blocks
+            const { data } = await axios.get('https://blox-fruits.fandom.com/api.php?action=parse&page=Blox_Fruits_Wiki&format=json', {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/json',
+                    'Referer': 'https://blox-fruits.fandom.com/wiki/Blox_Fruits_Wiki'
                 }
             });
-            const $ = cheerio.load(data);
+
+            const html = data.parse.text['*'];
+            const $ = cheerio.load(html);
 
             let currentStock = [];
             $('.fruit-name').each((i, el) => {
@@ -47,7 +51,7 @@ module.exports = {
             await msg.edit({ content: null, embeds: [stockEmbed] });
 
         } catch (err) {
-            console.error("Stock fetch failed:", err.message);
+            console.error("Manual stock fetch failed:", err.message);
             await msg.edit('❌ Error 67 contact nuh');
         }
     },
