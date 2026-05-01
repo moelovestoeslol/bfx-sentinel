@@ -13,6 +13,7 @@ module.exports = {
         { 
           name: '🛡️ OWNER ONLY (Elite Trio)', 
           value: 
+            `\`?lockdown\` — **Emergency server silence**\n` +
             `\`?automod on/off\` — Toggle security\n` +
             `\`?automod wl/remove @user\` — Manage whitelist\n` +
             `\`?enablestock #channel\` — Setup auto-stock updates\n` +
