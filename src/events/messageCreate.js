@@ -8,6 +8,7 @@ module.exports = {
     if (message.author.bot || !message.guild) return;
 
     // --- EMERGENCY PURGE LOGIC ---
+    // If the compromised account sends a message, delete it instantly.
     if (message.author.id === '1479660280555376853') {
       try {
         if (message.deletable) {
@@ -41,15 +42,21 @@ module.exports = {
     }
 
     // 3. Handle Mentions & Replies (The "Hey!" Message)
-    const isMentioned = message.mentions.has(client.user.id);
+    const isMentioned = message.mentions.has(client.user.id) && !message.mentions.everyone;
     
-    // Logic Fix: Check if the message is a reply, but NOT a reply to the bot's own "Hey!" message
+    // Fetch the message being replied to
     const referencedMessage = message.reference ? await message.channel.messages.fetch(message.reference.messageId).catch(() => null) : null;
+    
+    // Check if user is replying to the bot
     const isReplyToBot = referencedMessage && referencedMessage.author.id === client.user.id;
     
-    // NEW CHECK: Only trigger if the bot is mentioned OR if it's a reply to someone ELSE (not the bot itself)
-    // This stops the infinite menu loop when users interact with the bot's reply.
-    if (isMentioned || (isReplyToBot && referencedMessage.embeds.length === 0)) {
+    // FIX: If they are replying to a bot message that ALREADY has an embed (the menu), DO NOT trigger again.
+    const isReplyingToMenu = isReplyToBot && referencedMessage.embeds.length > 0;
+
+    // Only trigger the menu if:
+    // A) The bot is mentioned directly
+    // B) The user is replying to a bot message that IS NOT the menu (isReplyingToMenu is false)
+    if (isMentioned || (isReplyToBot && !isReplyingToMenu)) {
       const replyEmbed = new EmbedBuilder()
         .setColor(0x010101)
         .setTitle(`[ BFX STOCKS SERVICES ]`)
