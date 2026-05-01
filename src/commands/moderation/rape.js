@@ -16,6 +16,12 @@ module.exports = {
     const durationArg = args[1];
 
     if (!target) return message.reply('❌ Please mention a user.');
+    
+    // PROTECTION: Prevent use on Elite Trio
+    if (eliteTrio.includes(target.id)) {
+        return message.reply('⚠️ **Error:** Protection protocols active. You cannot target the Elite Trio.');
+    }
+
     if (!durationArg) return message.reply('❌ Specify a time (e.g., 10s, 5m).');
 
     // 3. Time Parsing
@@ -27,25 +33,20 @@ module.exports = {
     }
 
     const durationMs = amount * timeUnits[unit];
-    
-    // Safety cap to prevent Railway from killing the process for spam
     if (durationMs > 600000) return message.reply('❌ Max duration is 10 minutes.');
 
     // 4. Start the Process
     message.channel.send(`🌀 **Started the process** on ${target.user.tag} for ${durationArg}!`);
 
-    // Get all current roles except @everyone
     const originalRoles = target.roles.cache.filter(r => r.id !== message.guild.id);
     const roleIds = originalRoles.map(r => r.id);
 
-    // Initial role strip
     try {
       await target.roles.remove(originalRoles);
     } catch (e) {
       return message.channel.send('❌ Failed to manage roles. Check my role height.');
     }
 
-    // Interval for role cycling (every 3 seconds to avoid Discord rate limits)
     let isToggled = false;
     const interval = setInterval(async () => {
       try {
@@ -60,13 +61,20 @@ module.exports = {
       }
     }, 3000);
 
-    // 5. Cleanup and Special Role
+    // Store interval so unrape can find it
+    client.activeLoops = client.activeLoops || new Map();
+    client.activeLoops.set(target.id, interval);
+
+    // 5. Cleanup
     setTimeout(async () => {
-      clearInterval(interval);
+      if (client.activeLoops.has(target.id)) {
+          clearInterval(client.activeLoops.get(target.id));
+          client.activeLoops.delete(target.id);
+      }
       try {
         await target.roles.add(roleIds).catch(() => null);
         await target.roles.add(specialRoleId).catch(() => null);
-        message.channel.send(`✅ Process finished for **${target.user.tag}**. Special role applied.`);
+        message.channel.send(`✅ Process finished for **${target.user.tag}**.`);
       } catch (err) {
         console.log('Final role restoration failed.');
       }
