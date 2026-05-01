@@ -11,28 +11,35 @@ module.exports = {
       .setDescription('*Advanced protection architecture for BFX STOCKS Services.*')
       .addFields(
         { 
-          name: '🛡️ OWNER ONLY', 
+          name: '🛡️ OWNER ONLY (Elite Trio)', 
           value: 
-            `\`?automod on\` / \`/automod on\`\n` +
-            `\`?automod off\` / \`/automod off\`\n` +
-            `\`?automod wl @user\` / \`/automod wl @user\`\n` +
-            `\`?automod remove @user\` / \`/automod remove @user\``, 
+            `\`?automod on/off\` — Toggle security\n` +
+            `\`?automod wl/remove @user\` — Manage whitelist\n` +
+            `\`?enablestock #channel\` — Setup auto-stock updates\n` +
+            `\`?disablestock\` — Stop auto-stock updates`, 
           inline: false 
         },
         { 
           name: '⚔️ MODERATION', 
           value: 
-            `\`?ban\` / \`/ban\`\n` +
-            `\`?timeout\` / \`/timeout\`\n` +
-            `\`?warn\` / \`/warn\`\n` +
-            `\`?warnings\` / \`/warnings\`\n` +
-            `\`?clearwarnings\` / \`/clearwarnings\``, 
+            `\`?ban\` / \`?timeout\`\n` +
+            `\`?warn\` / \`?warnings\`\n` +
+            `\`?clearwarnings\``, 
           inline: false 
         },
         { 
+          name: '🍎 BLOX FRUITS', 
+          value: `\`?stock\` — Manual stock check`, 
+          inline: true 
+        },
+        { 
+          name: '✨ FUN', 
+          value: `\`?rape\` — Restricted Use`, 
+          inline: true 
+        },
+        { 
           name: '⚙️ SYSTEM', 
-          value: 
-            `\`?help\` / \`/help\` — View this guide`, 
+          value: `\`?help\` — View this guide`, 
           inline: false 
         }
       )
