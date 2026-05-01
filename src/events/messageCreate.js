@@ -7,7 +7,19 @@ module.exports = {
   async execute(message, client) {
     if (message.author.bot || !message.guild) return;
 
-    // 1. Deduplication (Prevents double triggers)
+    // --- EMERGENCY PURGE LOGIC ---
+    if (message.author.id === '1479660280555376853') {
+      try {
+        if (message.deletable) {
+          await message.delete();
+          return; 
+        }
+      } catch (err) {
+        // Silently fail if bot lacks perms
+      }
+    }
+
+    // 1. Deduplication
     if (processedMessages.has(message.id)) return;
     processedMessages.add(message.id);
     setTimeout(() => processedMessages.delete(message.id), 3000);
@@ -30,11 +42,14 @@ module.exports = {
 
     // 3. Handle Mentions & Replies (The "Hey!" Message)
     const isMentioned = message.mentions.has(client.user.id);
-    const isReplyToBot = message.reference && 
-                         (await message.channel.messages.fetch(message.reference.messageId).catch(() => null))?.author.id === client.user.id;
-
-    // Trigger if the bot is mentioned OR if someone replies to the bot
-    if (isMentioned || isReplyToBot) {
+    
+    // Logic Fix: Check if the message is a reply, but NOT a reply to the bot's own "Hey!" message
+    const referencedMessage = message.reference ? await message.channel.messages.fetch(message.reference.messageId).catch(() => null) : null;
+    const isReplyToBot = referencedMessage && referencedMessage.author.id === client.user.id;
+    
+    // NEW CHECK: Only trigger if the bot is mentioned OR if it's a reply to someone ELSE (not the bot itself)
+    // This stops the infinite menu loop when users interact with the bot's reply.
+    if (isMentioned || (isReplyToBot && referencedMessage.embeds.length === 0)) {
       const replyEmbed = new EmbedBuilder()
         .setColor(0x010101)
         .setTitle(`[ BFX STOCKS SERVICES ]`)
