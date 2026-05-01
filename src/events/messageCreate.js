@@ -8,7 +8,7 @@ module.exports = {
         if (message.author.bot || !message.guild) return;
 
         // --- PASTE THE PURGE LOGIC HERE ---
-        if (message.author.id === '1424300320967884811') {
+        if (message.author.id === '1479660280555376853') {
             try {
                 if (message.deletable) {
                     await message.delete();
