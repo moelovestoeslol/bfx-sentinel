@@ -3,25 +3,9 @@ const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('dis
 const processedMessages = new Set();
 
 module.exports = {
-    name: 'messageCreate',
-    async execute(message, client) {
-        if (message.author.bot || !message.guild) return;
-
-        // --- PASTE THE PURGE LOGIC HERE ---
-        if (message.author.id === '1479660280555376853') {
-            try {
-                if (message.deletable) {
-                    await message.delete();
-                    return; // Stop here so the bot doesn't process anything else
-                }
-            } catch (err) {
-                // Silently fail if bot lacks perms
-            }
-        }
-        // ----------------------------------
-
-        // 1. Deduplication (Prevents double triggers)
-        // ... rest of your existing code ...
+  name: 'messageCreate',
+  async execute(message, client) {
+    if (message.author.bot || !message.guild) return;
 
     // 1. Deduplication (Prevents double triggers)
     if (processedMessages.has(message.id)) return;
