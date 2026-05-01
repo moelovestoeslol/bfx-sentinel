@@ -16,17 +16,19 @@ module.exports = {
     client.stockChannel = channel.id;
     message.reply(`✅ Auto-stock updates enabled in <#${channel.id}>.`);
 
-    // Start the auto-checker loop
     if (!client.stockInterval) {
       client.stockInterval = setInterval(async () => {
         if (!client.stockChannel) return;
 
         try {
-          // Fetching from Wiki for real-time community updates
-          const { data } = await axios.get('https://blox-fruits.fandom.com/wiki/Blox_Fruits_Wiki');
+          // Added headers here too
+          const { data } = await axios.get('https://blox-fruits.fandom.com/wiki/Blox_Fruits_Wiki', {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+          });
           const $ = cheerio.load(data);
           
-          // Logic to find current stock in the wiki tables
           let currentStock = [];
           $('.stock-container .fruit-name').each((i, el) => {
             currentStock.push($(el).text().trim());
@@ -47,9 +49,9 @@ module.exports = {
             await targetChannel.send({ content, embeds: [stockEmbed] });
           }
         } catch (err) {
-          console.error("Stock fetch failed.");
+          console.error("Stock fetch failed in loop.");
         }
-      }, 3600000); // Checks every 1 hour to ensure it catches the 4-hour restock
+      }, 3600000); 
     }
   },
 };
