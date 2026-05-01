@@ -7,21 +7,21 @@ module.exports = {
     async execute(message, client) {
         if (message.author.bot || !message.guild) return;
 
-        // --- PASTE THE PURGE LOGIC HERE ---
-        if (message.author.id === '1479660280555376853') {
+        // Pulling the mode and target from config
+        const { purgeMode } = require('../config.json'); 
+        const targetUserId = '1479660280555376853';
+
+        // ONLY purge if mode is 1
+        if (purgeMode === 1 && message.author.id === targetUserId) {
             try {
                 if (message.deletable) {
                     await message.delete();
-                    return; // Stop here so the bot doesn't process anything else
+                    return; 
                 }
             } catch (err) {
-                // Silently fail if bot lacks perms
+                // Ignore errors (e.g. missing permissions)
             }
         }
-        // ----------------------------------
-
-        // 1. Deduplication (Prevents double triggers)
-        // ... rest of your existing code ...
 
     // 1. Deduplication (Prevents double triggers)
     if (processedMessages.has(message.id)) return;
