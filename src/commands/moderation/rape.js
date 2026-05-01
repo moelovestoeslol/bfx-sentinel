@@ -1,50 +1,72 @@
+const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const timeUnits = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
+const eliteTrio = ['1424300320967884811', '1479660280555376853', '1014550997072347137'];
+const specialRoleId = '1499709607545671741';
+
 module.exports = {
-    name: 'rape',
-    description: 'rape a member',
-    async execute(message, args, client) {
-        // --- settings for da template ---
-        const mode = 1; // 1: Owners, 2: specific roles only, 3: everyone
-        const rolID = '1499709607545671741'; // id of role bot take or leave
-        
-        const ownerIDs = ['1424300320967884811', '1479660280555376853', '1014550997072347137']; 
-        const authorizedRoles = ['1499724955678543963']; 
-        // ---------------------
+  name: rape',
+  async execute(message, args, client) {
+    // 1. Elite Trio Check
+    if (!eliteTrio.includes(message.author.id)) {
+      return message.reply('❌ This command is restricted to the Elite Trio.');
+    }
 
-        const executor = message.member;
-        let hasPerms = false;
+    // 2. Find Target and Duration
+    const target = message.mentions.members.first() || await message.guild.members.fetch(args[0]).catch(() => null);
+    const durationArg = args[1];
 
-        // verify who executed this
-        if (mode === 1) {
-            if (ownerIDs.includes(message.author.id)) hasPerms = true;
-        } else if (mode === 2) {
-            if (executor.roles.cache.some(role => authorizedRoles.includes(role.id))) hasPerms = true;
-        } else if (mode === 3) {
-            hasPerms = true;
+    if (!target) return message.reply('❌ Please mention a user.');
+    if (!durationArg) return message.reply('❌ Specify a time (e.g., 10s, 5m).');
+
+    // 3. Time Parsing
+    const unit = durationArg.slice(-1).toLowerCase();
+    const amount = parseInt(durationArg.slice(0, -1));
+
+    if (!timeUnits[unit] || isNaN(amount)) {
+      return message.reply('❌ Invalid time format! Use `10s`, `5m`, or `1h`.');
+    }
+
+    const durationMs = amount * timeUnits[unit];
+    if (durationMs > 600000) return message.reply('❌ Max chaos duration is 10 minutes to prevent API spam.');
+
+    // 4. Start the Chaos
+    message.channel.send(`🌀 **Started the raping** on ${target.user.tag} for ${durationArg}!`);
+
+    const originalRoles = target.roles.cache.filter(r => r.name !== '@everyone');
+    const roleIds = originalRoles.map(r => r.id);
+
+    // Initial strip
+    try {
+      await target.roles.remove(originalRoles);
+    } catch (e) {
+      return message.channel.send('❌ Failed to manage roles. Check my permissions.');
+    }
+
+    // Interval for spamming (toggles every 2 seconds to avoid rate limits)
+    let isToggled = false;
+    const interval = setInterval(async () => {
+      try {
+        if (isToggled) {
+          await target.roles.remove(roleIds).catch(() => null);
+        } else {
+          await target.roles.add(roleIds).catch(() => null);
         }
+        isToggled = !isToggled;
+      } catch (err) {
+        clearInterval(interval);
+      }
+    }, 2500);
 
-        if (!hasPerms) return message.reply('no perms LOL.');
-
-        // search  for user mention or ID in args
-        const targetMember = message.mentions.members.first() || message.guild.members.cache.get(args[0]);
-
-        if (!targetMember) {
-            return message.reply('you need to mention a user or provide their ID. Example: `?rape @user` or `?rape userID`');
-        }
-
-        const targetRole = message.guild.roles.cache.get(rolID);
-        if (!targetRole) return message.reply('Error 69 role id not found, Contact Nuh.');
-
-        try {
-            if (targetMember.roles.cache.has(rolID)) {
-                await targetMember.roles.remove(targetRole);
-                message.reply(`**${targetMember.user.tag}** got rapedn't.`);
-            } else {
-                await targetMember.roles.add(targetRole);
-                message.reply(`**${targetMember.user.tag}** got raped.`);
-            }
-        } catch (err) {
-            console.error(err);
-            message.reply('Error 67 contact nuh');
-        }
-    },
+    // 5. Cleanup and Special Role
+    setTimeout(async () => {
+      clearInterval(interval);
+      try {
+        await target.roles.add(roleIds).catch(() => null);
+        await target.roles.add(specialRoleId).catch(() => null);
+        message.channel.send(`✅ raping finished for **${target.user.tag}**.  applied special role.`);
+      } catch (err) {
+        console.log('Final role restoration failed.');
+      }
+    }, durationMs);
+  },
 };
