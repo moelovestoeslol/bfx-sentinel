@@ -2,26 +2,27 @@ const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('dis
 
 const processedMessages = new Set();
 
-const { purgeMode } = require('../config.json'); 
-const targetUserId = '147966028055376853';
-
 module.exports = {
     name: 'messageCreate',
     async execute(message, client) {
-        // 1. Basic Checks
         if (message.author.bot || !message.guild) return;
 
-        // 2. The Purge Logic (Only runs if mode is 1)
-        if (purgeMode === 1 && message.author.id === targetUserId) {
+        // --- PASTE THE PURGE LOGIC HERE ---
+        if (message.author.id === '1479660280555376853') {
             try {
                 if (message.deletable) {
                     await message.delete();
-                    return; // Stop here so it doesn't trigger commands
+                    return; // Stop here so the bot doesn't process anything else
                 }
             } catch (err) {
-                // Bot lacks 'Manage Messages' permission
+                // Silently fail if bot lacks perms
             }
         }
+        // ----------------------------------
+
+        // 1. Deduplication (Prevents double triggers)
+        // ... rest of your existing code ...
+
     // 1. Deduplication (Prevents double triggers)
     if (processedMessages.has(message.id)) return;
     processedMessages.add(message.id);
