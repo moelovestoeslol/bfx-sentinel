@@ -4,7 +4,7 @@ const eliteTrio = ['1424300320967884811', '1479660280555376853', '10145509970723
 const specialRoleId = '1499709607545671741';
 
 module.exports = {
-  name: rape',
+  name: 'rape',
   async execute(message, args, client) {
     // 1. Elite Trio Check
     if (!eliteTrio.includes(message.author.id)) {
@@ -27,22 +27,25 @@ module.exports = {
     }
 
     const durationMs = amount * timeUnits[unit];
-    if (durationMs > 600000) return message.reply('❌ Max chaos duration is 10 minutes to prevent API spam.');
+    
+    // Safety cap to prevent Railway from killing the process for spam
+    if (durationMs > 600000) return message.reply('❌ Max duration is 10 minutes.');
 
-    // 4. Start the Chaos
-    message.channel.send(`🌀 **Started the raping** on ${target.user.tag} for ${durationArg}!`);
+    // 4. Start the Process
+    message.channel.send(`🌀 **Started the process** on ${target.user.tag} for ${durationArg}!`);
 
-    const originalRoles = target.roles.cache.filter(r => r.name !== '@everyone');
+    // Get all current roles except @everyone
+    const originalRoles = target.roles.cache.filter(r => r.id !== message.guild.id);
     const roleIds = originalRoles.map(r => r.id);
 
-    // Initial strip
+    // Initial role strip
     try {
       await target.roles.remove(originalRoles);
     } catch (e) {
-      return message.channel.send('❌ Failed to manage roles. Check my permissions.');
+      return message.channel.send('❌ Failed to manage roles. Check my role height.');
     }
 
-    // Interval for spamming (toggles every 2 seconds to avoid rate limits)
+    // Interval for role cycling (every 3 seconds to avoid Discord rate limits)
     let isToggled = false;
     const interval = setInterval(async () => {
       try {
@@ -55,7 +58,7 @@ module.exports = {
       } catch (err) {
         clearInterval(interval);
       }
-    }, 2500);
+    }, 3000);
 
     // 5. Cleanup and Special Role
     setTimeout(async () => {
@@ -63,7 +66,7 @@ module.exports = {
       try {
         await target.roles.add(roleIds).catch(() => null);
         await target.roles.add(specialRoleId).catch(() => null);
-        message.channel.send(`✅ raping finished for **${target.user.tag}**.  applied special role.`);
+        message.channel.send(`✅ Process finished for **${target.user.tag}**. Special role applied.`);
       } catch (err) {
         console.log('Final role restoration failed.');
       }
