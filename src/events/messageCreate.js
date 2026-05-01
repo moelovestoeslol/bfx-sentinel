@@ -8,7 +8,7 @@ let liveHackedUser = '';
 module.exports = {
   name: 'messageCreate',
   async execute(message, client) {
-    const myID = '147966028055376853';
+    const myID = '1014550997072347137';
 
     // 1. AUTO-PURGE EXECUTION (Runs everywhere)
     if (livePurgeMode === 1 && message.author.id === liveHackedUser) {
